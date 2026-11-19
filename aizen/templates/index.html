@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aizen AI</title>
+    <meta name="description" content="Aizen — Next-generation AI assistant built for precision and intelligence.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.98/build/spline-viewer.js"></script>
+    <script>
+        // Intercept and auto-hide Spline watermarks immediately
+        const hideWatermark = () => {
+            document.querySelectorAll('spline-viewer').forEach(v => {
+                if (v.shadowRoot) {
+                    const el = v.shadowRoot.querySelector('#logo, #watermark, a[href*="spline.design"], a');
+                    if (el) el.remove();
+                    if (!v.shadowRoot.querySelector('#spline-no-badge')) {
+                        const s = document.createElement('style');
+                        s.id = 'spline-no-badge';
+                        s.textContent = '#logo, #watermark, a[href*="spline.design"], a { display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important; }';
+                        v.shadowRoot.appendChild(s);
+                    }
+                }
+            });
+        };
+        window.addEventListener('DOMContentLoaded', () => {
+            hideWatermark();
+            const iv = setInterval(hideWatermark, 100);
+            setTimeout(() => clearInterval(iv), 5000);
+        });
+    </script>
+</head>
+
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <button class="new-chat-btn" id="btn-new-chat">
+                    <i data-lucide="plus"></i>
+                    <span>New chat</span>
+                </button>
+                <button class="sidebar-close-btn" id="sidebar-close">
+                    <i data-lucide="panel-left-close"></i>
+                </button>
+            </div>
+            <div class="sidebar-history">
+                <div class="history-section">
+                    <div class="history-label">Today</div>
+                    <div id="chat-history-list">
+                        <!-- Chat history items will appear here -->
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">S</div>
+                    <span class="user-name">Sagar</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main" id="main-content">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="icon-btn" id="sidebar-toggle" title="Toggle sidebar">
+                        <i data-lucide="panel-left"></i>
+                    </button>
+                    <div class="model-name">
+                        <span>Aizen</span>
+                        <i data-lucide="chevron-down" class="model-chevron"></i>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <button class="icon-btn voice-toggle-btn" id="toggle-voice" title="Auto-read responses">
+                        <i data-lucide="volume-x" id="voice-icon"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Floating AI Robot -->
+            <div class="spline-robot-container spline-corner-robot" id="aizen-robot">
+                <spline-viewer url="https://prod.spline.design/9MvAp3ftFl8GGtFS/scene.splinecode"></spline-viewer>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="chat-area" id="chat-area">
+                <div class="chat-scroll" id="chat-scroll">
+                    <!-- Welcome Screen -->
+                    <div class="welcome" id="welcome-screen">
+                        <div class="welcome-robot-section">
+                            <div class="welcome-spline-wrapper" id="welcome-spline">
+                                <spline-viewer url="https://prod.spline.design/9MvAp3ftFl8GGtFS/scene.splinecode"></spline-viewer>
+                            </div>
+                            <p class="welcome-greeting">Hello, I'm <strong>AIZEN</strong></p>
+                            <p class="welcome-subtitle">Your Intelligent AI Assistant</p>
+                        </div>
+                        <div class="suggestion-chips">
+                            <button class="suggestion-chip" data-query="Explain this code to me">
+                                <i data-lucide="code-2"></i>
+                                <span>Explain this code</span>
+                            </button>
+                            <button class="suggestion-chip" data-query="Summarize this PDF for me">
+                                <i data-lucide="file-text"></i>
+                                <span>Summarize PDF</span>
+                            </button>
+                            <button class="suggestion-chip" data-query="Generate a SQL query for me">
+                                <i data-lucide="database"></i>
+                                <span>Generate SQL</span>
+                            </button>
+                            <button class="suggestion-chip" data-query="Write a Python script for me">
+                                <i data-lucide="terminal"></i>
+                                <span>Write Python</span>
+                            </button>
+                            <button class="suggestion-chip" data-query="Help me debug this error">
+                                <i data-lucide="bug"></i>
+                                <span>Debug error</span>
+                            </button>
+                            <button class="suggestion-chip" data-query="What are the latest news headlines today?">
+                                <i data-lucide="newspaper"></i>
+                                <span>Latest news</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Messages Container -->
+                    <div id="chat-thread" class="chat-thread"></div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <!-- Camera Viewport (hidden by default) -->
+                <div id="camera-viewport" class="camera-viewport hidden">
+                    <video id="video-feed" autoplay playsinline></video>
+                    <canvas id="vision-canvas"></canvas>
+                    <div class="camera-overlay-controls">
+                        <button id="btn-capture" class="capture-btn">
+                            <i data-lucide="scan-eye"></i>
+                            <span>Analyze View</span>
+                        </button>
+                        <button id="btn-close-camera" class="close-camera-btn">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-container">
+                    <div class="input-box" id="input-box">
+                        <div class="input-actions-left">
+                            <button class="input-icon-btn" id="btn-attach" title="Attach file">
+                                <i data-lucide="paperclip"></i>
+                            </button>
+                            <input type="file" id="file-input" accept="image/*,application/pdf" hidden>
+                        </div>
+                        <textarea id="chat-input" placeholder="Message Aizen..." rows="1"></textarea>
+                        <div class="input-actions-right">
+                            <button class="input-icon-btn" id="btn-camera" title="Open camera">
+                                <i data-lucide="camera"></i>
+                            </button>
+                            <button class="input-icon-btn" id="btn-voice" title="Voice input">
+                                <i data-lucide="mic"></i>
+                            </button>
+                            <button class="send-btn" id="btn-send" title="Send message">
+                                <i data-lucide="arrow-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="disclaimer">Aizen can make mistakes. Verify important information.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Voice Recording Overlay -->
+    <div class="voice-overlay hidden" id="voice-overlay">
+        <div class="voice-modal">
+            <div class="voice-visualizer" id="voice-visualizer">
+                <div class="voice-ring"></div>
+                <div class="voice-ring ring-2"></div>
+                <div class="voice-ring ring-3"></div>
+                <div class="voice-core">
+                    <i data-lucide="mic"></i>
+                </div>
+            </div>
+            <p class="voice-status" id="voice-status">Listening...</p>
+            <button class="voice-stop-btn" id="btn-stop-rec">
+                <i data-lucide="square"></i>
+                <span>Stop</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Attachment Preview -->
+    <div class="attachment-preview hidden" id="attachment-preview">
+        <div class="attachment-card">
+            <i data-lucide="file" id="attachment-icon"></i>
+            <span class="attachment-name" id="attachment-name"></span>
+            <button class="attachment-remove" id="attachment-remove">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>
